@@ -7,10 +7,11 @@ function createAuthContext(userId: number = 1): TrpcContext {
   return {
     user: {
       id: userId,
-      openId: `user-${userId}`,
+      googleId: null,
       email: `user${userId}@example.com`,
+      passwordHash: null,
       name: `User ${userId}`,
-      loginMethod: "manus",
+      loginMethod: "email",
       role: "user",
       createdAt: new Date(),
       updatedAt: new Date(),

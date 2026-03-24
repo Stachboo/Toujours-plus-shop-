@@ -1,9 +1,9 @@
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
-import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { registerUser, loginUser, createSessionToken } from "./auth";
 import {
   getAllCategories,
   getCategoryBySlug,
@@ -73,13 +73,54 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 // ============================================================================
 
 export const appRouter = router({
-  system: systemRouter,
+  // ========================================================================
+  // HEALTH CHECK
+  // ========================================================================
+  health: router({
+    check: publicProcedure.query(() => ({ ok: true, timestamp: Date.now() })),
+  }),
 
   // ========================================================================
   // AUTH ROUTER
   // ========================================================================
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),
+
+    register: publicProcedure
+      .input(z.object({
+        name: z.string().min(2, "Le nom doit faire au moins 2 caractères").max(100),
+        email: z.string().email("Email invalide"),
+        password: z.string().min(8, "Le mot de passe doit faire au moins 8 caractères").max(128),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const user = await registerUser(input);
+          const token = await createSessionToken(user);
+          const cookieOptions = getSessionCookieOptions(ctx.req);
+          ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+          return { success: true, user };
+        } catch (error: any) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+        }
+      }),
+
+    login: publicProcedure
+      .input(z.object({
+        email: z.string().email("Email invalide"),
+        password: z.string().min(1, "Mot de passe requis"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const user = await loginUser(input);
+          const token = await createSessionToken(user);
+          const cookieOptions = getSessionCookieOptions(ctx.req);
+          ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+          return { success: true, user };
+        } catch (error: any) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: error.message });
+        }
+      }),
+
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });

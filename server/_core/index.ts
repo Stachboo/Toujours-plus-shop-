@@ -6,7 +6,7 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "./oauth";
+import { registerAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 
@@ -53,11 +53,15 @@ async function startServer() {
 
   // Rate limiting on auth and payment endpoints
   const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 50, message: "Too many requests" });
-  app.use("/api/oauth", authLimiter);
+  app.use("/api/auth", authLimiter);
   app.use("/api/stripe", authLimiter);
 
-  // OAuth callback under /api/oauth/callback
-  registerOAuthRoutes(app);
+  // Auth routes (Google OAuth callback, etc.)
+  registerAuthRoutes(app);
+
+  // Health check
+  app.get("/api/health", (_, res) => res.json({ ok: true }));
+
   // tRPC API
   app.use(
     "/api/trpc",

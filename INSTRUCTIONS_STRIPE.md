@@ -14,9 +14,9 @@
 
 ---
 
-## ÉTAPE 2 — Variables d'environnement dans Manus
+## ÉTAPE 2 — Variables d'environnement
 
-Dans ton projet Manus, ajoute ces variables d'environnement :
+Dans ton projet, ajoute ces variables d'environnement :
 
 ```
 STRIPE_SECRET_KEY=sk_live_XXXXXXXXXXXXXXXX        (ou sk_test_ pour les tests)
@@ -44,7 +44,7 @@ npm install @stripe/stripe-js @stripe/react-stripe-js
 
 1. Dans le dashboard Stripe → **Développeurs → Webhooks**
 2. Clique **"Ajouter un endpoint"**
-3. URL : `https://toujoursshop-8dz65kox.manus.space/api/stripe/webhook`
+3. URL : `https://your-backend.railway.app/api/stripe/webhook`
 4. Événements à écouter : `payment_intent.succeeded`
 5. Copie le **"Signing secret"** (whsec_...) → colle dans `STRIPE_WEBHOOK_SECRET`
 

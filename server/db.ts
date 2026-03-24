@@ -1,8 +1,8 @@
 import { eq, and, gte, lte, like, inArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { 
-  InsertUser, 
-  users, 
+import {
+  users,
+  type User,
   categories, 
   products, 
   productVariants, 
@@ -41,75 +41,71 @@ export async function getDb() {
 // USER QUERIES
 // ============================================================================
 
-export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
-  }
-
+export async function upsertUser(data: {
+  email: string;
+  name: string;
+  googleId: string | null;
+  passwordHash: string | null;
+  loginMethod: string;
+}): Promise<User> {
   const db = await getDb();
   if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
+    throw new Error("Database not available");
   }
 
   try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
-    const updateSet: Record<string, unknown> = {};
+    // Check if user already exists by email
+    const existing = await db.select().from(users).where(eq(users.email, data.email)).limit(1);
 
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
-
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-
-    textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
+    if (existing.length > 0) {
+      // Update existing user
+      const updateSet: Record<string, unknown> = {
+        lastSignedIn: new Date(),
+      };
+      // If this is a Google login, link the googleId
+      if (data.googleId) {
+        updateSet.googleId = data.googleId;
+      }
+      if (data.name) {
+        updateSet.name = data.name;
+      }
+      await db.update(users).set(updateSet).where(eq(users.id, existing[0].id));
+      const updated = await db.select().from(users).where(eq(users.id, existing[0].id)).limit(1);
+      return updated[0];
     }
 
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
+    // Insert new user
+    const role = data.email === ENV.adminEmail ? "admin" : "user";
+    await db.insert(users).values({
+      email: data.email,
+      name: data.name,
+      googleId: data.googleId,
+      passwordHash: data.passwordHash,
+      loginMethod: data.loginMethod,
+      role,
+      lastSignedIn: new Date(),
     });
+
+    const inserted = await db.select().from(users).where(eq(users.email, data.email)).limit(1);
+    return inserted[0];
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
   }
 }
 
-export async function getUserByOpenId(openId: string) {
+export async function getUserByEmail(email: string): Promise<User | null> {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
+  if (!db) return null;
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result[0] ?? null;
+}
 
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
-  return result.length > 0 ? result[0] : undefined;
+export async function getUserById(id: number): Promise<User | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result[0] ?? null;
 }
 
 // ============================================================================

@@ -4,8 +4,9 @@
 - **Frontend** : React + TypeScript + Vite + Tailwind + shadcn/ui + Wouter
 - **Backend** : Node.js + tRPC + Drizzle ORM
 - **Base de données** : MySQL sur TiDB Cloud
-- **Hébergement** : Manus
-- **Auth** : OAuth Manus
+- **Frontend hosting** : Vercel
+- **Backend hosting** : Railway / Render
+- **Auth** : Email/password + Google OAuth
 
 ## Structure du projet
 ```
@@ -26,11 +27,25 @@
 ```
 
 ## Variables d'environnement nécessaires
+
+### Backend
 ```
-DATABASE_URL=                    (fourni par Manus/TiDB)
-STRIPE_SECRET_KEY=sk_live_...   (à créer sur stripe.com)
-STRIPE_WEBHOOK_SECRET=whsec_... (généré dans dashboard Stripe)
-VITE_STRIPE_PUBLISHABLE_KEY=pk_live_... (clé publique Stripe)
+DATABASE_URL=mysql://user:password@host:4000/database?ssl={"rejectUnauthorized":true}
+JWT_SECRET=your-secret-min-32-chars
+ADMIN_EMAIL=admin@example.com
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+FRONTEND_URL=https://your-app.vercel.app
+PORT=3000
+```
+
+### Frontend (prefixees VITE_)
+```
+VITE_API_URL=https://your-backend.railway.app
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
+VITE_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 ```
 
 ## Ce qui reste à faire (priorité ordre)

@@ -1,13 +1,14 @@
 import { eq, and, gte, lte, like, inArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import mysql from "mysql2";
 import {
   users,
   type User,
-  categories, 
-  products, 
-  productVariants, 
-  cartItems, 
-  orders, 
+  categories,
+  products,
+  productVariants,
+  cartItems,
+  orders,
   orderItems,
   type Category,
   type Product,
@@ -28,7 +29,13 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      // Strip ssl query param from URL and force SSL via connection options
+      const dbUrl = process.env.DATABASE_URL.replace(/[?&]ssl=[^&]*/g, "");
+      const pool = mysql.createPool({
+        uri: dbUrl,
+        ssl: { rejectUnauthorized: true },
+      } as any);
+      _db = drizzle(pool);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;

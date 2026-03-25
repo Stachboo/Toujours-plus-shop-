@@ -36,8 +36,8 @@ async function startServer() {
   // Security headers
   app.use(helmet());
 
-  // CORS — allow frontend origin
-  const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+  // CORS — allow frontend origin (strip trailing slash for strict comparison)
+  const FRONTEND_URL = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/+$/, "");
   app.use(cors({
     origin: FRONTEND_URL,
     credentials: true,

@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
 export default function Register() {
   const [, navigate] = useLocation();
@@ -12,6 +12,8 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const registerMutation = trpc.auth.register.useMutation({
     onSuccess: () => {
@@ -26,7 +28,7 @@ export default function Register() {
     e.preventDefault();
 
     if (password.length < 8) {
-      toast.error("Le mot de passe doit contenir au moins 8 caracteres");
+      toast.error("Le mot de passe doit contenir au moins 8 caractères");
       return;
     }
 
@@ -50,7 +52,7 @@ export default function Register() {
             TOUJOURS +
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">
-            Creez votre compte
+            Créez votre compte
           </p>
         </div>
 
@@ -89,28 +91,46 @@ export default function Register() {
               <label className="block text-xs text-muted-foreground uppercase tracking-widest mb-2 font-semibold">
                 Mot de passe
               </label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="Minimum 8 caracteres"
-                className={inputClasses}
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Minimum 8 caractères"
+                  className={`${inputClasses} pr-10`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <div>
               <label className="block text-xs text-muted-foreground uppercase tracking-widest mb-2 font-semibold">
                 Confirmer le mot de passe
               </label>
-              <Input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                placeholder="Retapez votre mot de passe"
-                className={inputClasses}
-              />
+              <div className="relative">
+                <Input
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  placeholder="Retapez votre mot de passe"
+                  className={`${inputClasses} pr-10`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <Button
@@ -125,14 +145,14 @@ export default function Register() {
                   Inscription...
                 </>
               ) : (
-                "S'inscrire"
+                "Créer mon compte"
               )}
             </Button>
           </form>
 
           {/* Login link */}
           <p className="text-center text-sm text-muted-foreground mt-6">
-            Deja un compte ?{" "}
+            Déjà un compte ?{" "}
             <button
               onClick={() => navigate("/login")}
               className="text-primary hover:text-primary/80 font-semibold transition-colors"

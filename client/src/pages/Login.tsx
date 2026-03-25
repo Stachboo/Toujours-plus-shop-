@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getGoogleOAuthUrl } from "@/const";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const [, navigate] = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: () => {
@@ -25,7 +26,7 @@ export default function Login() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("error") === "oauth_failed") {
-      toast.error("La connexion avec Google a echoue. Veuillez reessayer.");
+      toast.error("La connexion avec Google a échoué. Veuillez réessayer.");
     }
   }, []);
 
@@ -46,7 +47,7 @@ export default function Login() {
             TOUJOURS +
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">
-            Connectez-vous a votre compte
+            Connectez-vous à votre compte
           </p>
         </div>
 
@@ -71,14 +72,23 @@ export default function Login() {
               <label className="block text-xs text-muted-foreground uppercase tracking-widest mb-2 font-semibold">
                 Mot de passe
               </label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="Votre mot de passe"
-                className={inputClasses}
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Votre mot de passe"
+                  className={`${inputClasses} pr-10`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <Button

@@ -117,15 +117,14 @@ export default function Header() {
                 </Button>
               </div>
             ) : (
-              <a href={getLoginUrl()}>
-                <motion.button
-                  className="p-2.5 rounded-xl transition-colors duration-300 hover:bg-white/5"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <User className="w-5 h-5 text-foreground/80" />
-                </motion.button>
-              </a>
+              <motion.button
+                onClick={() => navigate(getLoginUrl())}
+                className="p-2.5 rounded-xl transition-colors duration-300 hover:bg-white/5"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <User className="w-5 h-5 text-foreground/80" />
+              </motion.button>
             )}
 
             {/* Mobile Menu Toggle */}

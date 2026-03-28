@@ -22,11 +22,12 @@ import { motion } from 'framer-motion';
 import { ChevronLeft, Loader2, Shield, Lock, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 
-// ⚠️ Remplace par ta vraie clé publique Stripe (pk_live_... ou pk_test_...)
 // Variable d'environnement côté client : VITE_STRIPE_PUBLISHABLE_KEY
-const stripePromise = loadStripe(
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_REMPLACE_PAR_TA_CLE'
-);
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+if (!stripeKey) {
+  console.error("VITE_STRIPE_PUBLISHABLE_KEY is not defined — payments will not work");
+}
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 
 // ============================================================================
 // Formulaire de paiement Stripe Elements (composant interne)

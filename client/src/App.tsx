@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
@@ -10,11 +11,12 @@ import Home from "./pages/Home";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
-import AdminDashboard from "./pages/AdminDashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+
+const Checkout = lazy(() => import("./pages/Checkout"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -22,20 +24,22 @@ function Router() {
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-1">
-        <Switch>
-          <Route path="/" component={Home} />
-          <Route path="/products" component={Products} />
-          <Route path="/product/:id" component={ProductDetail} />
-          <Route path="/cart" component={Cart} />
-          <Route path="/checkout" component={Checkout} />
-          <Route path="/order-confirmation/:id" component={OrderConfirmation} />
-          <Route path="/admin" component={AdminDashboard} />
-          <Route path="/login" component={Login} />
-          <Route path="/register" component={Register} />
-          <Route path="/404" component={NotFound} />
-          {/* Final fallback route */}
-          <Route component={NotFound} />
-        </Switch>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" /></div>}>
+          <Switch>
+            <Route path="/" component={Home} />
+            <Route path="/products" component={Products} />
+            <Route path="/product/:id" component={ProductDetail} />
+            <Route path="/cart" component={Cart} />
+            <Route path="/checkout" component={Checkout} />
+            <Route path="/order-confirmation/:id" component={OrderConfirmation} />
+            <Route path="/admin" component={AdminDashboard} />
+            <Route path="/login" component={Login} />
+            <Route path="/register" component={Register} />
+            <Route path="/404" component={NotFound} />
+            {/* Final fallback route */}
+            <Route component={NotFound} />
+          </Switch>
+        </Suspense>
       </main>
       <Footer />
     </div>

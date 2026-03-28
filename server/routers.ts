@@ -70,7 +70,11 @@ export const appRouter = router({
   // AUTH ROUTER
   // ========================================================================
   auth: router({
-    me: publicProcedure.query((opts) => opts.ctx.user),
+    me: publicProcedure.query((opts) => {
+      if (!opts.ctx.user) return null;
+      const { passwordHash, googleId, ...safeUser } = opts.ctx.user;
+      return safeUser;
+    }),
 
     register: publicProcedure
       .input(z.object({
@@ -84,7 +88,8 @@ export const appRouter = router({
           const token = await createSessionToken(user);
           const cookieOptions = getSessionCookieOptions(ctx.req);
           ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-          return { success: true, user };
+          const { passwordHash, googleId, ...safeUser } = user;
+          return { success: true, user: safeUser };
         } catch (error: any) {
           throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
         }
@@ -101,7 +106,8 @@ export const appRouter = router({
           const token = await createSessionToken(user);
           const cookieOptions = getSessionCookieOptions(ctx.req);
           ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-          return { success: true, user };
+          const { passwordHash, googleId, ...safeUser } = user;
+          return { success: true, user: safeUser };
         } catch (error: any) {
           throw new TRPCError({ code: "UNAUTHORIZED", message: error.message });
         }

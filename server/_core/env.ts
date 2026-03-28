@@ -11,3 +11,14 @@ export const ENV = {
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
   port: parseInt(process.env.PORT || "3000", 10),
 };
+
+// Validate critical env vars at startup
+if (!ENV.cookieSecret) {
+  throw new Error("Missing required environment variable: JWT_SECRET");
+}
+if (ENV.cookieSecret.length < 32) {
+  throw new Error("JWT_SECRET must be at least 32 characters");
+}
+if (!ENV.databaseUrl) {
+  throw new Error("Missing required environment variable: DATABASE_URL");
+}

@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, index, uniqueIndex } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -55,7 +55,10 @@ export const products = mysqlTable("products", {
   isActive: int("isActive").default(1).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_products_categoryId").on(table.categoryId),
+  index("idx_products_isActive").on(table.isActive),
+]);
 
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = typeof products.$inferInsert;
@@ -72,7 +75,9 @@ export const productVariants = mysqlTable("productVariants", {
   sku: varchar("sku", { length: 100 }).notNull().unique(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_variants_productId").on(table.productId),
+]);
 
 export type ProductVariant = typeof productVariants.$inferSelect;
 export type InsertProductVariant = typeof productVariants.$inferInsert;
@@ -87,7 +92,11 @@ export const cartItems = mysqlTable("cartItems", {
   quantity: int("quantity").notNull().default(1),
   addedAt: timestamp("addedAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_cart_userId").on(table.userId),
+  index("idx_cart_variantId").on(table.variantId),
+  uniqueIndex("uq_cart_user_variant").on(table.userId, table.variantId),
+]);
 
 export type CartItem = typeof cartItems.$inferSelect;
 export type InsertCartItem = typeof cartItems.$inferInsert;
@@ -123,7 +132,11 @@ export const orders = mysqlTable("orders", {
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_orders_userId").on(table.userId),
+  index("idx_orders_status").on(table.status),
+  index("idx_orders_stripePI").on(table.stripePaymentIntentId),
+]);
 
 export type Order = typeof orders.$inferSelect;
 export type InsertOrder = typeof orders.$inferInsert;
@@ -143,7 +156,9 @@ export const orderItems = mysqlTable("orderItems", {
   pricePerUnit: int("pricePerUnit").notNull(), // Price in cents at time of order
   subtotal: int("subtotal").notNull(), // quantity * pricePerUnit
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => [
+  index("idx_orderItems_orderId").on(table.orderId),
+]);
 
 export type OrderItem = typeof orderItems.$inferSelect;
 export type InsertOrderItem = typeof orderItems.$inferInsert;

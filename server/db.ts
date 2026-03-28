@@ -1,4 +1,4 @@
-import { eq, and, or, gte, lte, like, inArray, sql } from "drizzle-orm";
+import { eq, and, or, gte, lte, like, inArray, sql, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2";
 import {
@@ -33,7 +33,7 @@ export async function getDb() {
       const dbUrl = ENV.databaseUrl.replace(/[?&]ssl=[^&]*/g, "");
       const pool = mysql.createPool({
         uri: dbUrl,
-        ssl: { rejectUnauthorized: false },
+        ssl: { rejectUnauthorized: true },
         connectTimeout: 10000,
       } as any);
       _db = drizzle(pool);
@@ -338,7 +338,7 @@ export async function getOrderById(id: number): Promise<Order | undefined> {
 export async function getOrdersByUserId(userId: number): Promise<Order[]> {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(orders).where(eq(orders.userId, userId));
+  return db.select().from(orders).where(eq(orders.userId, userId)).orderBy(desc(orders.createdAt));
 }
 
 export async function getAllOrders(options?: { limit?: number; offset?: number }): Promise<Order[]> {
@@ -346,7 +346,7 @@ export async function getAllOrders(options?: { limit?: number; offset?: number }
   if (!db) return [];
   const limit = options?.limit ?? 50;
   const offset = options?.offset ?? 0;
-  return db.select().from(orders).limit(limit).offset(offset);
+  return db.select().from(orders).orderBy(desc(orders.createdAt)).limit(limit).offset(offset);
 }
 
 export async function updateOrderStatus(orderId: number, status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'): Promise<void> {

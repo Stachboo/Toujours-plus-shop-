@@ -40,6 +40,12 @@ async function startServer() {
   // Security headers (allow popups for Google OAuth flow)
   app.use(helmet({
     crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+      },
+    },
   }));
 
   // CORS — allow frontend origin (strip trailing slash for strict comparison)
@@ -53,14 +59,17 @@ async function startServer() {
   const { stripeWebhookHandler } = await import("../stripeWebhook");
   app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), stripeWebhookHandler);
 
-  // Configure body parser with larger size limit for file uploads
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // Configure body parser
+  app.use(express.json({ limit: "1mb" }));
+  app.use(express.urlencoded({ limit: "1mb", extended: true }));
 
   // Rate limiting on auth and payment endpoints
   const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 50, message: "Too many requests" });
   app.use("/api/auth", authLimiter);
   app.use("/api/stripe", authLimiter);
+  app.use("/api/trpc/auth.login", authLimiter);
+  app.use("/api/trpc/auth.register", authLimiter);
+  app.use("/api/trpc/stripe.createPaymentIntent", authLimiter);
 
   // Auth routes (Google OAuth callback, etc.)
   registerAuthRoutes(app);

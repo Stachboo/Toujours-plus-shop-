@@ -11,7 +11,6 @@ import { getLoginUrl } from '@/const';
 export default function Cart() {
   const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   const { data: cartItems = [], refetch: refetchCart } = trpc.cart.list.useQuery(
     undefined,
@@ -233,11 +232,8 @@ export default function Cart() {
                   </div>
 
                   <Button
-                    onClick={() => {
-                      setIsCheckingOut(true);
-                      navigate('/checkout');
-                    }}
-                    disabled={cartItems.length === 0 || isCheckingOut}
+                    onClick={() => navigate('/checkout')}
+                    disabled={cartItems.length === 0}
                     className="w-full btn-primary py-4 text-base gap-2"
                     size="lg"
                   >

@@ -33,7 +33,7 @@ export async function getDb() {
       const dbUrl = ENV.databaseUrl.replace(/[?&]ssl=[^&]*/g, "");
       const pool = mysql.createPool({
         uri: dbUrl,
-        ssl: {},
+        ssl: { rejectUnauthorized: false },
         connectTimeout: 10000,
       } as any);
       _db = drizzle(pool);

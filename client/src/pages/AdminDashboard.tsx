@@ -21,6 +21,19 @@ export default function AdminDashboard() {
   const [, navigate] = useLocation();
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
 
+  const { data: orders = [], refetch: refetchOrders } = trpc.admin.orders.list.useQuery(
+    undefined,
+    { enabled: user?.role === 'admin' }
+  );
+
+  const updateStatusMutation = trpc.admin.orders.updateStatus.useMutation({
+    onSuccess: () => {
+      refetchOrders();
+      toast.success('Statut mis à jour');
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
   if (user?.role !== 'admin') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -37,16 +50,6 @@ export default function AdminDashboard() {
       </div>
     );
   }
-
-  const { data: orders = [], refetch: refetchOrders } = trpc.admin.orders.list.useQuery();
-
-  const updateStatusMutation = trpc.admin.orders.updateStatus.useMutation({
-    onSuccess: () => {
-      refetchOrders();
-      toast.success('Statut mis à jour');
-    },
-    onError: (error) => toast.error(error.message),
-  });
 
   const selectedOrder = orders.find((o) => o.id === selectedOrderId);
 

@@ -1,6 +1,6 @@
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { registerUser, loginUser, createSessionToken } from "./auth";
@@ -17,15 +17,12 @@ import {
   updateCartItemQuantity,
   removeFromCart,
   clearCart,
-  createOrder,
   getOrderById,
   getOrdersByUserId,
   getAllOrders,
   updateOrderStatus,
-  addOrderItems,
   getOrderItems,
 } from "./db";
-import { nanoid } from "nanoid";
 import { getStripe } from "./stripe";
 
 // ============================================================================
@@ -55,17 +52,6 @@ const CheckoutSchema = z.object({
   billingPostalCode: z.string().optional(),
   billingCountry: z.string().optional(),
   notes: z.string().optional(),
-});
-
-// ============================================================================
-// ADMIN PROCEDURES (Security: Role-based access control)
-// ============================================================================
-
-const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (ctx.user.role !== "admin") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
-  }
-  return next({ ctx });
 });
 
 // ============================================================================

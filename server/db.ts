@@ -1,4 +1,4 @@
-import { eq, and, gte, lte, like, inArray, sql } from "drizzle-orm";
+import { eq, and, or, gte, lte, like, inArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2";
 import {
@@ -27,10 +27,10 @@ let _db: ReturnType<typeof drizzle> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
+  if (!_db && ENV.databaseUrl) {
     try {
       // Strip ssl query param from URL and force SSL via connection options
-      const dbUrl = process.env.DATABASE_URL.replace(/[?&]ssl=[^&]*/g, "");
+      const dbUrl = ENV.databaseUrl.replace(/[?&]ssl=[^&]*/g, "");
       const pool = mysql.createPool({
         uri: dbUrl,
         ssl: { rejectUnauthorized: true },
@@ -147,7 +147,8 @@ export async function getAllProducts(filters?: { categoryId?: number; search?: s
   }
 
   if (filters?.search) {
-    conditions.push(like(products.slogan, `%${escapeLikeWildcards(filters.search)}%`));
+    const pattern = `%${escapeLikeWildcards(filters.search)}%`;
+    conditions.push(or(like(products.slogan, pattern), like(products.name, pattern))!);
   }
 
   return db.select().from(products).where(and(...conditions));
@@ -202,13 +203,6 @@ export async function getVariantById(id: number): Promise<ProductVariant | undef
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(productVariants).where(eq(productVariants.id, id)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
-}
-
-export async function getVariantBySku(sku: string): Promise<ProductVariant | undefined> {
-  const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(productVariants).where(eq(productVariants.sku, sku)).limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
 

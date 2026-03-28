@@ -13,7 +13,7 @@ export function registerAuthRoutes(app: Express) {
     }
 
     try {
-      const redirectUri = `${ENV.frontendUrl}/api/auth/google/callback`;
+      const redirectUri = `${ENV.backendUrl}/api/auth/google/callback`;
       const user = await handleGoogleCallback(code, redirectUri);
       const sessionToken = await createSessionToken(user);
       const cookieOptions = getSessionCookieOptions(req);

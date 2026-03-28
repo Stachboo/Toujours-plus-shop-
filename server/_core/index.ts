@@ -9,6 +9,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { ENV } from "./env";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -33,11 +34,13 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  // Security headers
-  app.use(helmet());
+  // Security headers (allow popups for Google OAuth flow)
+  app.use(helmet({
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  }));
 
   // CORS — allow frontend origin (strip trailing slash for strict comparison)
-  const FRONTEND_URL = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/+$/, "");
+  const FRONTEND_URL = ENV.frontendUrl.replace(/\/+$/, "");
   app.use(cors({
     origin: FRONTEND_URL,
     credentials: true,
@@ -71,7 +74,7 @@ async function startServer() {
     })
   );
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
+  const preferredPort = ENV.port;
   const port = await findAvailablePort(preferredPort);
 
   if (port !== preferredPort) {

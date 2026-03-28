@@ -144,7 +144,7 @@ describe("Admin Access Control", () => {
       expect.fail("Should have thrown FORBIDDEN error");
     } catch (error: any) {
       expect(error.code).toBe("FORBIDDEN");
-      expect(error.message).toContain("Admin access required");
+      expect(error.message).toContain("You do not have required permission");
     }
   });
 

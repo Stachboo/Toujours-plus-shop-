@@ -7,14 +7,24 @@ import { CheckCircle, Package, Home, ShoppingBag, ArrowRight } from 'lucide-reac
 export default function OrderConfirmation() {
   const [, params] = useRoute('/order-confirmation/:id');
   const [, navigate] = useLocation();
-  const orderId = params?.id ? parseInt(params.id) : 0;
+  const paramId = params?.id ?? '';
+  const isGenericSuccess = paramId === 'success' || paramId === 'pending';
+  const orderId = isGenericSuccess ? 0 : (parseInt(paramId) || 0);
 
   const { data: order, isLoading } = trpc.orders.getById.useQuery(
     { id: orderId },
     { enabled: orderId > 0 }
   );
 
-  if (isLoading) {
+  const statusLabels: Record<string, string> = {
+    pending: 'En attente',
+    processing: 'En préparation',
+    shipped: 'Expédiée',
+    delivered: 'Livrée',
+    cancelled: 'Annulée',
+  };
+
+  if (!isGenericSuccess && isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -25,7 +35,7 @@ export default function OrderConfirmation() {
     );
   }
 
-  if (!order) {
+  if (!isGenericSuccess && !order) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -38,14 +48,6 @@ export default function OrderConfirmation() {
       </div>
     );
   }
-
-  const statusLabels: Record<string, string> = {
-    pending: 'En attente',
-    processing: 'En préparation',
-    shipped: 'Expédiée',
-    delivered: 'Livrée',
-    cancelled: 'Annulée',
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -66,7 +68,7 @@ export default function OrderConfirmation() {
             transition={{ delay: 0.2 }}
             className="text-3xl md:text-5xl font-bold text-foreground mb-4"
           >
-            Commande <span className="text-primary">confirmée</span> !
+            Paiement <span className="text-primary">confirmé</span> !
           </motion.h1>
           <motion.p
             initial={{ opacity: 0 }}
@@ -74,7 +76,9 @@ export default function OrderConfirmation() {
             transition={{ delay: 0.3 }}
             className="text-muted-foreground text-lg"
           >
-            Merci {order.customerName}, votre commande est en route.
+            {order
+              ? `Merci ${order.customerName}, votre commande est en route.`
+              : 'Merci pour votre achat ! Votre commande est en cours de traitement.'}
           </motion.p>
         </div>
       </section>
@@ -88,47 +92,58 @@ export default function OrderConfirmation() {
             transition={{ delay: 0.4 }}
             className="glass-card p-6 md:p-8 space-y-8"
           >
-            {/* Order Number */}
-            <div className="text-center pb-6 border-b border-border/20">
-              <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">
-                Numéro de commande
-              </p>
-              <p className="text-2xl font-bold font-mono text-primary">{order.orderNumber}</p>
-            </div>
+            {order ? (
+              <>
+                {/* Order Number */}
+                <div className="text-center pb-6 border-b border-border/20">
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">
+                    Numéro de commande
+                  </p>
+                  <p className="text-2xl font-bold font-mono text-primary">{order.orderNumber}</p>
+                </div>
 
-            {/* Status */}
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-white/3">
-              <Package className="w-5 h-5 text-primary" />
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-widest">Statut</p>
-                <p className="font-semibold text-foreground">
-                  {statusLabels[order.status] || order.status}
+                {/* Status */}
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-white/3">
+                  <Package className="w-5 h-5 text-primary" />
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest">Statut</p>
+                    <p className="font-semibold text-foreground">
+                      {statusLabels[order.status] || order.status}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Shipping */}
+                <div>
+                  <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-3 font-semibold">
+                    Adresse de livraison
+                  </h3>
+                  <div className="p-4 rounded-xl bg-white/3 space-y-1 text-sm">
+                    <p className="font-semibold text-foreground">{order.customerName}</p>
+                    <p className="text-muted-foreground">{order.shippingAddress}</p>
+                    <p className="text-muted-foreground">
+                      {order.shippingPostalCode} {order.shippingCity}
+                    </p>
+                    <p className="text-muted-foreground">{order.shippingCountry}</p>
+                  </div>
+                </div>
+
+                {/* Total */}
+                <div className="border-t border-border/20 pt-6 flex justify-between items-center">
+                  <span className="font-bold text-foreground text-lg">Total payé</span>
+                  <span className="text-3xl font-bold text-primary">
+                    {(order.totalAmount / 100).toFixed(2)}€
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="text-center pb-6 border-b border-border/20">
+                <Package className="w-10 h-10 text-primary mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  Votre commande est en cours de création. Vous recevrez un email de confirmation sous peu.
                 </p>
               </div>
-            </div>
-
-            {/* Shipping */}
-            <div>
-              <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-3 font-semibold">
-                Adresse de livraison
-              </h3>
-              <div className="p-4 rounded-xl bg-white/3 space-y-1 text-sm">
-                <p className="font-semibold text-foreground">{order.customerName}</p>
-                <p className="text-muted-foreground">{order.shippingAddress}</p>
-                <p className="text-muted-foreground">
-                  {order.shippingPostalCode} {order.shippingCity}
-                </p>
-                <p className="text-muted-foreground">{order.shippingCountry}</p>
-              </div>
-            </div>
-
-            {/* Total */}
-            <div className="border-t border-border/20 pt-6 flex justify-between items-center">
-              <span className="font-bold text-foreground text-lg">Total payé</span>
-              <span className="text-3xl font-bold text-primary">
-                {(order.totalAmount / 100).toFixed(2)}€
-              </span>
-            </div>
+            )}
 
             {/* Next Steps */}
             <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
@@ -136,7 +151,7 @@ export default function OrderConfirmation() {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                  Commande confirmée
+                  Paiement confirmé
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />

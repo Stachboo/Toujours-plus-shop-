@@ -5,10 +5,11 @@ import { getStripe } from "./stripe";
 import { getDb } from "./db";
 import { cartItems, orders, orderItems, productVariants, products } from "../drizzle/schema";
 import { nanoid } from "nanoid";
+import { ENV } from "./_core/env";
 
 export async function stripeWebhookHandler(req: Request, res: Response) {
   const sig = req.headers["stripe-signature"] as string;
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const webhookSecret = ENV.stripeWebhookSecret;
 
   if (!webhookSecret) {
     console.error("[Stripe Webhook] STRIPE_WEBHOOK_SECRET manquant");

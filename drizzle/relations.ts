@@ -1,1 +1,1 @@
-import {} from "./schema";
+// Drizzle relations — define here when needed

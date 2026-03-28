@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { ENV } from "./_core/env";
 
 let _stripe: Stripe | null = null;
 
@@ -8,10 +9,10 @@ let _stripe: Stripe | null = null;
  */
 export function getStripe(): Stripe {
   if (!_stripe) {
-    if (!process.env.STRIPE_SECRET_KEY) {
+    if (!ENV.stripeSecretKey) {
       throw new Error("STRIPE_SECRET_KEY manquant dans les variables d'environnement");
     }
-    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    _stripe = new Stripe(ENV.stripeSecretKey, {
       apiVersion: "2025-02-24.acacia",
       typescript: true,
     });

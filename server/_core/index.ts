@@ -34,6 +34,9 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
+  // Trust reverse proxy (Render, Railway) for correct req.protocol and x-forwarded-proto
+  app.set("trust proxy", 1);
+
   // Security headers (allow popups for Google OAuth flow)
   app.use(helmet({
     crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },

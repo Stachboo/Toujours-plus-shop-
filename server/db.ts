@@ -33,11 +33,13 @@ export async function getDb() {
       const dbUrl = ENV.databaseUrl.replace(/[?&]ssl=[^&]*/g, "");
       const pool = mysql.createPool({
         uri: dbUrl,
-        ssl: { rejectUnauthorized: true },
+        ssl: {},
+        connectTimeout: 10000,
       } as any);
       _db = drizzle(pool);
+      console.log("[Database] Pool created successfully");
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
+      console.error("[Database] Failed to create pool:", error);
       _db = null;
     }
   }

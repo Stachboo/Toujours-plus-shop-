@@ -1,4 +1,5 @@
 FROM node:20-alpine AS base
+RUN apk add --no-cache ca-certificates && update-ca-certificates
 RUN corepack enable && corepack prepare pnpm@10.4.1 --activate
 WORKDIR /app
 
@@ -15,6 +16,7 @@ RUN pnpm run build
 
 # Production stage
 FROM node:20-alpine AS production
+RUN apk add --no-cache ca-certificates && update-ca-certificates
 RUN corepack enable && corepack prepare pnpm@10.4.1 --activate
 WORKDIR /app
 

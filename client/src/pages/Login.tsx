@@ -9,13 +9,15 @@ import { Loader2, Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const [, navigate] = useLocation();
+  const utils = trpc.useUtils();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const loginMutation = trpc.auth.login.useMutation({
-    onSuccess: () => {
-      window.location.href = "/";
+    onSuccess: async () => {
+      await utils.auth.me.invalidate();
+      navigate("/");
     },
     onError: (error) => {
       toast.error(error.message || "Erreur lors de la connexion");

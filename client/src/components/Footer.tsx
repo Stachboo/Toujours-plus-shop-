@@ -12,7 +12,7 @@ export default function Footer() {
   const handleNewsletter = (e: React.FormEvent) => {
     e.preventDefault();
     if (email) {
-      toast.success('Merci ! Vous recevrez bientôt nos offres exclusives.');
+      toast.success('Merci pour votre intérêt ! La newsletter sera bientôt disponible.');
       setEmail('');
     }
   };
@@ -131,13 +131,17 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} Toujours +. Tous droits réservés.
           </p>
           <div className="flex gap-6">
-            {['Mentions légales', 'CGV', 'Politique de confidentialité'].map((item) => (
+            {[
+              { label: 'Mentions légales', hash: '#mentions' },
+              { label: 'CGV', hash: '#cgv' },
+              { label: 'Politique de confidentialité', hash: '#privacy' },
+            ].map((item) => (
               <button
-                key={item}
+                key={item.label}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-300"
-                onClick={() => toast.info('Page bientôt disponible !')}
+                onClick={() => navigate(`/legal${item.hash}`)}
               >
-                {item}
+                {item.label}
               </button>
             ))}
           </div>

@@ -8,6 +8,7 @@ import { Loader2, Eye, EyeOff } from "lucide-react";
 
 export default function Register() {
   const [, navigate] = useLocation();
+  const utils = trpc.useUtils();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,8 +17,9 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const registerMutation = trpc.auth.register.useMutation({
-    onSuccess: () => {
-      window.location.href = "/";
+    onSuccess: async () => {
+      await utils.auth.me.invalidate();
+      navigate("/");
     },
     onError: (error) => {
       toast.error(error.message || "Erreur lors de l'inscription");

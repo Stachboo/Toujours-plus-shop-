@@ -1,4 +1,4 @@
-import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { COOKIE_NAME, SESSION_TTL_MS } from "@shared/const";
 import type { Express } from "express";
 import { getSessionCookieOptions } from "./cookies";
 import { handleGoogleCallback, createSessionToken } from "../auth";
@@ -17,7 +17,7 @@ export function registerAuthRoutes(app: Express) {
       const user = await handleGoogleCallback(code, redirectUri);
       const sessionToken = await createSessionToken(user);
       const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: SESSION_TTL_MS });
       res.redirect(302, ENV.frontendUrl);
     } catch (error) {
       console.error("[Google OAuth] Callback failed:", error);

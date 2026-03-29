@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { ShoppingBag, Trash2, Plus, Minus, ChevronLeft, ArrowRight, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { getLoginUrl } from '@/const';
+import { formatPrice, FREE_SHIPPING_THRESHOLD, SHIPPING_COST } from '@shared/const';
 
 export default function Cart() {
   const { isAuthenticated } = useAuth();
@@ -39,10 +40,9 @@ export default function Cart() {
   });
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.product?.price || 0) * item.quantity, 0);
-  const freeShippingThreshold = 5000;
-  const shipping = subtotal >= freeShippingThreshold ? 0 : 500;
+  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
   const total = subtotal + shipping;
-  const remainingForFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
+  const remainingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
 
   if (!isAuthenticated) {
     return (
@@ -120,13 +120,13 @@ export default function Cart() {
                     <div className="flex items-center gap-3 mb-2">
                       <Truck className="w-4 h-4 text-primary" />
                       <p className="text-sm text-foreground">
-                        Plus que <span className="text-primary font-semibold">{(remainingForFreeShipping / 100).toFixed(2)}€</span> pour la livraison gratuite !
+                        Plus que <span className="text-primary font-semibold">{formatPrice(remainingForFreeShipping)}</span> pour la livraison gratuite !
                       </p>
                     </div>
                     <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-500"
-                        style={{ width: `${Math.min(100, (subtotal / freeShippingThreshold) * 100)}%` }}
+                        style={{ width: `${Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100)}%` }}
                       />
                     </div>
                   </div>
@@ -192,7 +192,7 @@ export default function Cart() {
 
                         {/* Price */}
                         <p className="font-bold text-foreground">
-                          {(((item.product?.price || 0) * item.quantity) / 100).toFixed(2)}€
+                          {formatPrice((item.product?.price || 0) * item.quantity)}
                         </p>
                       </div>
                     </div>
@@ -216,19 +216,19 @@ export default function Cart() {
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between text-muted-foreground">
                       <span>Sous-total</span>
-                      <span>{(subtotal / 100).toFixed(2)}€</span>
+                      <span>{formatPrice(subtotal)}</span>
                     </div>
                     <div className="flex justify-between text-muted-foreground">
                       <span>Livraison</span>
                       <span className={shipping === 0 ? 'text-green-400 font-semibold' : ''}>
-                        {shipping === 0 ? 'Gratuite' : `${(shipping / 100).toFixed(2)}€`}
+                        {shipping === 0 ? 'Gratuite' : `${formatPrice(shipping)}`}
                       </span>
                     </div>
                   </div>
 
                   <div className="border-t border-border/30 pt-4 flex justify-between items-center">
                     <span className="font-bold text-foreground">Total</span>
-                    <span className="text-2xl font-bold text-primary">{(total / 100).toFixed(2)}€</span>
+                    <span className="text-2xl font-bold text-primary">{formatPrice(total)}</span>
                   </div>
 
                   <Button

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { trpc } from '@/lib/trpc';
 import { motion } from 'framer-motion';
 import { CheckCircle, Package, Home, ShoppingBag, ArrowRight } from 'lucide-react';
+import { formatPrice } from '@shared/const';
 
 export default function OrderConfirmation() {
   const [, params] = useRoute('/order-confirmation/:id');
@@ -132,7 +133,7 @@ export default function OrderConfirmation() {
                 <div className="border-t border-border/20 pt-6 flex justify-between items-center">
                   <span className="font-bold text-foreground text-lg">Total payé</span>
                   <span className="text-3xl font-bold text-primary">
-                    {(order.totalAmount / 100).toFixed(2)}€
+                    {formatPrice(order.totalAmount)}
                   </span>
                 </div>
               </>

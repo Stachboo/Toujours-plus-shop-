@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=800, height=800">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  @import url('https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:wght@400;700&display=swap');
+
+  body {
+    width: 800px;
+    height: 800px;
+    overflow: hidden;
+    background: #0a0a0a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  /* Ambient lighting */
+  .ambient {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 38% 32%, rgba(255,107,53,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 65% 70%, rgba(212,168,67,0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Subtle grid */
+  .grid-overlay {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .mockup-container {
+    position: relative;
+    width: 800px;
+    height: 800px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+
+  /* Garment SVG container */
+  .garment {
+    position: relative;
+    width: 420px;
+    height: 460px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 20px 60px rgba(0,0,0,0.6));
+  }
+
+  .garment svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Design overlay on the garment */
+  .design-overlay {
+    position: absolute;
+    top: 38%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    width: 65%;
+    z-index: 5;
+  }
+
+  .design-overlay .brand-prefix {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: #d4a843;
+    opacity: 0.9;
+    margin-bottom: 6px;
+  }
+
+  .design-overlay .slogan-text {
+    font-family: 'Anton', sans-serif;
+    font-size: 64px;
+    line-height: 1;
+    text-transform: uppercase;
+    color: #f0ede8;
+    letter-spacing: 4px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    /* Slight texture effect */
+    filter: contrast(1.05);
+  }
+
+  .design-overlay .plus-symbol {
+    color: #ff6b35;
+    font-size: 72px;
+  }
+
+  /* Bottom info bar */
+  .product-info {
+    position: absolute;
+    bottom: 50px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    z-index: 10;
+  }
+
+  .product-info .type-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 8px;
+  }
+
+  .product-info .price-tag {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: #d4a843;
+  }
+
+  /* Corner brand mark */
+  .brand-mark {
+    position: absolute;
+    top: 35px;
+    left: 40px;
+    z-index: 10;
+  }
+  .brand-mark span {
+    font-family: 'Anton', sans-serif;
+    font-size: 18px;
+    color: #ff6b35;
+    letter-spacing: 3px;
+    opacity: 0.7;
+  }
+
+  /* Decorative line */
+  .accent-line {
+    position: absolute;
+    top: 65px;
+    left: 40px;
+    width: 60px;
+    height: 2px;
+    background: linear-gradient(90deg, #ff6b35, transparent);
+    opacity: 0.5;
+    z-index: 10;
+  }
+</style>
+</head>
+<body>
+  <div class="ambient"></div>
+  <div class="grid-overlay"></div>
+
+  <div class="mockup-container">
+    <div class="brand-mark"><span>TOUJOURS +</span></div>
+    <div class="accent-line"></div>
+
+    <div class="garment">
+      <!-- SVG garment silhouette injected by JS -->
+      <svg id="garment-svg" viewBox="0 0 400 460" xmlns="http://www.w3.org/2000/svg"></svg>
+
+      <div class="design-overlay">
+        <div class="brand-prefix">TOUJOURS</div>
+        <div class="slogan-text"><span class="plus-symbol">+</span> <span id="slogan-display">SLOGAN</span></div>
+      </div>
+    </div>
+
+    <div class="product-info">
+      <div class="type-label" id="type-label">T-SHIRT</div>
+      <div class="price-tag" id="price-tag">29,99 &euro;</div>
+    </div>
+  </div>
+
+<script>
+  // T-shirt SVG paths
+  const TSHIRT_SVG = `
+    <defs>
+      <linearGradient id="shirtGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#2a2a2e"/>
+        <stop offset="50%" style="stop-color:#1e1e22"/>
+        <stop offset="100%" style="stop-color:#252528"/>
+      </linearGradient>
+      <linearGradient id="foldHighlight" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#fff" stop-opacity="0"/>
+        <stop offset="35%" stop-color="#fff" stop-opacity="0.04"/>
+        <stop offset="50%" stop-color="#fff" stop-opacity="0"/>
+        <stop offset="70%" stop-color="#fff" stop-opacity="0.03"/>
+        <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+      </linearGradient>
+      <radialGradient id="lightSource" cx="40%" cy="25%" r="70%">
+        <stop offset="0%" stop-color="#fff" stop-opacity="0.06"/>
+        <stop offset="100%" stop-color="#000" stop-opacity="0.08"/>
+      </radialGradient>
+      <filter id="fabricNoise">
+        <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="4" seed="2" result="noise"/>
+        <feColorMatrix in="noise" type="saturate" values="0" result="grayNoise"/>
+        <feBlend in="SourceGraphic" in2="grayNoise" mode="overlay" result="noisy"/>
+        <feComponentTransfer in="noisy">
+          <feFuncR type="linear" slope="1" intercept="0.01"/>
+          <feFuncG type="linear" slope="1" intercept="0.01"/>
+          <feFuncB type="linear" slope="1" intercept="0.01"/>
+        </feComponentTransfer>
+      </filter>
+    </defs>
+    <!-- Main shirt shape -->
+    <path filter="url(#fabricNoise)" d="
+      M 120,8
+      L 60,30
+      L 0,100
+      L 50,140
+      L 80,110
+      L 80,440
+      L 320,440
+      L 320,110
+      L 350,140
+      L 400,100
+      L 340,30
+      L 280,8
+      C 270,42 230,65 200,65
+      C 170,65 130,42 120,8
+      Z
+    " fill="url(#shirtGrad)"/>
+    <!-- Fold highlight -->
+    <path d="
+      M 120,8 L 60,30 L 0,100 L 50,140 L 80,110
+      L 80,440 L 320,440 L 320,110 L 350,140
+      L 400,100 L 340,30 L 280,8
+      C 270,42 230,65 200,65
+      C 170,65 130,42 120,8 Z
+    " fill="url(#foldHighlight)"/>
+    <!-- Lighting -->
+    <path d="
+      M 120,8 L 60,30 L 0,100 L 50,140 L 80,110
+      L 80,440 L 320,440 L 320,110 L 350,140
+      L 400,100 L 340,30 L 280,8
+      C 270,42 230,65 200,65
+      C 170,65 130,42 120,8 Z
+    " fill="url(#lightSource)"/>
+    <!-- Collar detail -->
+    <path d="
+      M 120,8
+      C 130,42 170,65 200,65
+      C 230,65 270,42 280,8
+      C 265,15 235,25 200,25
+      C 165,25 135,15 120,8
+      Z
+    " fill="#1a1a1e" opacity="0.7"/>
+  `;
+
+  // Sweat/Hoodie SVG paths
+  const SWEAT_SVG = `
+    <defs>
+      <linearGradient id="shirtGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#2d2d32"/>
+        <stop offset="50%" style="stop-color:#222226"/>
+        <stop offset="100%" style="stop-color:#28282c"/>
+      </linearGradient>
+      <linearGradient id="foldHighlight" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#fff" stop-opacity="0"/>
+        <stop offset="30%" stop-color="#fff" stop-opacity="0.035"/>
+        <stop offset="55%" stop-color="#fff" stop-opacity="0"/>
+        <stop offset="75%" stop-color="#fff" stop-opacity="0.025"/>
+        <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+      </linearGradient>
+      <radialGradient id="lightSource" cx="38%" cy="22%" r="70%">
+        <stop offset="0%" stop-color="#fff" stop-opacity="0.05"/>
+        <stop offset="100%" stop-color="#000" stop-opacity="0.06"/>
+      </radialGradient>
+      <filter id="fabricNoise">
+        <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="4" seed="3" result="noise"/>
+        <feColorMatrix in="noise" type="saturate" values="0" result="grayNoise"/>
+        <feBlend in="SourceGraphic" in2="grayNoise" mode="overlay" result="noisy"/>
+        <feComponentTransfer in="noisy">
+          <feFuncR type="linear" slope="1" intercept="0.01"/>
+          <feFuncG type="linear" slope="1" intercept="0.01"/>
+          <feFuncB type="linear" slope="1" intercept="0.01"/>
+        </feComponentTransfer>
+      </filter>
+    </defs>
+    <!-- Hood left -->
+    <path d="M 130,18 C 115,5 95,2 80,8 L 45,45 L 30,90 L 65,82 L 75,58 C 90,38 115,30 135,25 Z" fill="#333" filter="url(#fabricNoise)"/>
+    <!-- Hood right -->
+    <path d="M 270,18 C 285,5 305,2 320,8 L 355,45 L 370,90 L 335,82 L 325,58 C 310,38 285,30 265,25 Z" fill="#333" filter="url(#fabricNoise)"/>
+    <!-- Main body -->
+    <path filter="url(#fabricNoise)" d="
+      M 130,18
+      L 55,45
+      L 0,110
+      L 50,150
+      L 75,118
+      L 75,440
+      L 325,440
+      L 325,118
+      L 350,150
+      L 400,110
+      L 345,45
+      L 270,18
+      C 260,50 235,72 200,72
+      C 165,72 140,50 130,18
+      Z
+    " fill="url(#shirtGrad)"/>
+    <!-- Fold highlight -->
+    <path d="
+      M 130,18 L 55,45 L 0,110 L 50,150 L 75,118
+      L 75,440 L 325,440 L 325,118 L 350,150
+      L 400,110 L 345,45 L 270,18
+      C 260,50 235,72 200,72
+      C 165,72 140,50 130,18 Z
+    " fill="url(#foldHighlight)"/>
+    <!-- Lighting -->
+    <path d="
+      M 130,18 L 55,45 L 0,110 L 50,150 L 75,118
+      L 75,440 L 325,440 L 325,118 L 350,150
+      L 400,110 L 345,45 L 270,18
+      C 260,50 235,72 200,72
+      C 165,72 140,50 130,18 Z
+    " fill="url(#lightSource)"/>
+    <!-- Kangaroo pocket -->
+    <path d="M 130,290 Q 130,330 160,340 L 240,340 Q 270,330 270,290 Z" fill="#1e1e22" opacity="0.5"/>
+    <!-- Drawstrings -->
+    <line x1="185" y1="72" x2="178" y2="130" stroke="#444" stroke-width="2" stroke-linecap="round"/>
+    <line x1="215" y1="72" x2="222" y2="130" stroke="#444" stroke-width="2" stroke-linecap="round"/>
+    <!-- Hood collar -->
+    <path d="
+      M 130,18
+      C 140,50 165,72 200,72
+      C 235,72 260,50 270,18
+      C 255,28 230,38 200,38
+      C 170,38 145,28 130,18 Z
+    " fill="#262629" opacity="0.8"/>
+  `;
+
+  // Parse URL params
+  const params = new URLSearchParams(window.location.search);
+  const slogan = params.get('slogan') || 'COOL';
+  const type = params.get('type') || 'tshirt'; // tshirt or sweat
+  const price = params.get('price') || '29,99';
+
+  // Set content
+  document.getElementById('slogan-display').textContent = slogan.toUpperCase();
+  document.getElementById('type-label').textContent = type === 'sweat' ? 'SWEAT' : 'T-SHIRT';
+  document.getElementById('price-tag').textContent = price + ' \u20AC';
+  document.getElementById('garment-svg').innerHTML = type === 'sweat' ? SWEAT_SVG : TSHIRT_SVG;
+
+  // Adjust text size for long slogans
+  const sloganEl = document.querySelector('.slogan-text');
+  if (slogan.length > 10) {
+    sloganEl.style.fontSize = '48px';
+  }
+  if (slogan.length > 15) {
+    sloganEl.style.fontSize = '38px';
+  }
+</script>
+</body>
+</html>

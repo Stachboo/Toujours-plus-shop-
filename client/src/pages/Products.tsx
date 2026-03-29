@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { trpc } from '@/lib/trpc';
 import { motion } from 'framer-motion';
 import { Search, ShoppingBag, SlidersHorizontal, X } from 'lucide-react';
+import { formatPrice } from '@shared/const';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -28,16 +29,7 @@ export default function Products() {
     categoryId: selectedCategory,
   });
 
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const matchesSearch =
-        search === '' ||
-        product.slogan.toLowerCase().includes(search.toLowerCase()) ||
-        product.name.toLowerCase().includes(search.toLowerCase());
-      const matchesCategory = !selectedCategory || product.categoryId === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
-  }, [products, search, selectedCategory]);
+  const filteredProducts = products;
 
   return (
     <div className="min-h-screen bg-background">
@@ -200,9 +192,6 @@ export default function Products() {
                           <span className="slogan text-base text-center">{product.slogan}</span>
                         </div>
                       )}
-                      <div className="absolute top-3 left-3 flex gap-2">
-                        <span className="badge-new">Nouveau</span>
-                      </div>
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                         <span className="text-sm font-semibold text-white bg-white/20 backdrop-blur-sm px-4 py-2 rounded-xl">
                           Voir le produit
@@ -215,7 +204,7 @@ export default function Products() {
                         {product.name} &middot; {categories.find((c) => c.id === product.categoryId)?.name}
                       </p>
                       <div className="flex items-center justify-between">
-                        <p className="product-card-price">{(product.price / 100).toFixed(2)}€</p>
+                        <p className="product-card-price">{formatPrice(product.price)}</p>
                       </div>
                     </div>
                   </button>

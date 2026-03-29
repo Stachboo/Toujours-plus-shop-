@@ -31,7 +31,7 @@ class ErrorBoundary extends Component<Props, State> {
               className="text-destructive mb-6 flex-shrink-0"
             />
 
-            <h2 className="text-xl mb-4">An unexpected error occurred.</h2>
+            <h2 className="text-xl mb-4">Une erreur inattendue s'est produite.</h2>
 
             {import.meta.env.DEV && this.state.error?.stack && (
               <div className="p-4 w-full rounded bg-muted overflow-auto mb-6">
@@ -50,7 +50,7 @@ class ErrorBoundary extends Component<Props, State> {
               )}
             >
               <RotateCcw size={16} />
-              Reload Page
+              Recharger la page
             </button>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { LOGOS } from '@/const/logos';
 import { trpc } from '@/lib/trpc';
 import { motion } from 'framer-motion';
 import { ArrowRight, ShoppingBag, Truck, Shield, RotateCcw, Star, Zap } from 'lucide-react';
+import { formatPrice } from '@shared/const';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 40 },
@@ -152,12 +153,12 @@ export default function Home() {
                 transition={{ delay: 0.2, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
                 className="relative"
               >
-                {/* Floating animation wrapper */}
-                <div className="animate-float">
+                {/* Floating + slow 3D rotation */}
+                <div className="animate-float" style={{ perspective: '1200px' }}>
                   <img
                     src={LOGOS.hero3dTshirt}
                     alt="T-shirt Toujours + Con - Streetwear Premium"
-                    className="w-[280px] sm:w-[340px] md:w-[400px] lg:w-[440px] xl:w-[500px] h-auto drop-shadow-[0_30px_60px_rgba(0,0,0,0.5)]"
+                    className="w-[280px] sm:w-[340px] md:w-[400px] lg:w-[440px] xl:w-[500px] h-auto drop-shadow-[0_30px_60px_rgba(0,0,0,0.5)] animate-spin-y"
                   />
                 </div>
 
@@ -320,14 +321,11 @@ export default function Home() {
                           <span className="slogan text-lg text-center">{product.slogan}</span>
                         </div>
                       )}
-                      <div className="absolute top-3 left-3">
-                        <span className="badge-new">Nouveau</span>
-                      </div>
                     </div>
                     <div className="product-card-content">
                       <p className="product-card-slogan">{product.slogan}</p>
                       <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">{product.name}</p>
-                      <p className="product-card-price">{(product.price / 100).toFixed(2)}€</p>
+                      <p className="product-card-price">{formatPrice(product.price)}</p>
                     </div>
                   </button>
                 </motion.div>

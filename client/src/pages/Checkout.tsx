@@ -1,10 +1,3 @@
-// ============================================================================
-// FICHIER : client/src/pages/Checkout.tsx
-// Remplace complètement le fichier existant
-// DÉPENDANCES À INSTALLER :
-//   npm install @stripe/stripe-js @stripe/react-stripe-js
-// ============================================================================
-
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { loadStripe } from '@stripe/stripe-js';
@@ -21,6 +14,7 @@ import { useAuth } from '@/_core/hooks/useAuth';
 import { motion } from 'framer-motion';
 import { ChevronLeft, Loader2, Shield, Lock, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatPrice, FREE_SHIPPING_THRESHOLD, SHIPPING_COST } from '@shared/const';
 
 // Variable d'environnement côté client : VITE_STRIPE_PUBLISHABLE_KEY
 const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
@@ -92,7 +86,7 @@ function StripePaymentForm({
         ) : (
           <>
             <Lock className="w-4 h-4" />
-            Payer — {(totalAmount / 100).toFixed(2)} €
+            Payer — {formatPrice(totalAmount)}
           </>
         )}
       </Button>
@@ -133,6 +127,7 @@ export default function Checkout() {
 
   const [useSameAddress, setUseSameAddress] = useState(true);
 
+  const utils = trpc.useUtils();
   const { data: cartItems = [] } = trpc.cart.list.useQuery();
 
   // Mutation qui crée le PaymentIntent côté serveur
@@ -171,12 +166,13 @@ export default function Checkout() {
 
   const handlePaymentSuccess = () => {
     // Le webhook Stripe crée la commande en DB automatiquement
-    // On redirige vers une page de confirmation générique
+    // Invalidate cart cache then redirect to confirmation
+    utils.cart.list.invalidate();
     navigate('/order-confirmation/success');
   };
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.product?.price || 0) * item.quantity, 0);
-  const shipping = subtotal >= 5000 ? 0 : 500;
+  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
   const total = subtotal + shipping;
 
   const inputClasses =
@@ -449,7 +445,7 @@ export default function Checkout() {
                   ) : (
                     <>
                       <CreditCard className="w-4 h-4" />
-                      Continuer vers le paiement — {(total / 100).toFixed(2)} €
+                      Continuer vers le paiement — {formatPrice(total)}
                     </>
                   )}
                 </Button>
@@ -512,7 +508,7 @@ export default function Checkout() {
                         <span className="text-foreground/50">x{item.quantity}</span>
                       </span>
                       <span className="text-foreground font-medium whitespace-nowrap">
-                        {(((item.product?.price || 0) * item.quantity) / 100).toFixed(2)} €
+                        {formatPrice((item.product?.price || 0) * item.quantity)}
                       </span>
                     </div>
                   ))}
@@ -521,12 +517,12 @@ export default function Checkout() {
                 <div className="border-t border-border/20 pt-4 space-y-2 text-sm">
                   <div className="flex justify-between text-muted-foreground">
                     <span>Sous-total</span>
-                    <span>{(subtotal / 100).toFixed(2)} €</span>
+                    <span>{formatPrice(subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-muted-foreground">
                     <span>Livraison</span>
                     <span className={shipping === 0 ? 'text-green-400 font-semibold' : ''}>
-                      {shipping === 0 ? 'Gratuite' : `${(shipping / 100).toFixed(2)} €`}
+                      {shipping === 0 ? 'Gratuite' : `${formatPrice(shipping)}`}
                     </span>
                   </div>
                   {shipping > 0 && (
@@ -538,7 +534,7 @@ export default function Checkout() {
 
                 <div className="border-t border-border/20 pt-4 flex justify-between items-center">
                   <span className="font-bold text-foreground">Total</span>
-                  <span className="text-2xl font-bold text-primary">{(total / 100).toFixed(2)} €</span>
+                  <span className="text-2xl font-bold text-primary">{formatPrice(total)}</span>
                 </div>
 
                 <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">

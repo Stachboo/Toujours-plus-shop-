@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import compression from "compression";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
@@ -47,6 +48,9 @@ async function startServer() {
       },
     },
   }));
+
+  // Compress responses
+  app.use(compression());
 
   // CORS — allow frontend origin (strip trailing slash for strict comparison)
   const FRONTEND_URL = ENV.frontendUrl.replace(/\/+$/, "");
@@ -96,6 +100,18 @@ async function startServer() {
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
   });
+
+  // Graceful shutdown
+  const shutdown = () => {
+    console.log("[Server] Shutting down gracefully...");
+    server.close(() => {
+      console.log("[Server] HTTP server closed");
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(1), 10_000);
+  };
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
 }
 
 startServer().catch(console.error);

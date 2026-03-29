@@ -6,12 +6,15 @@ import { LOGOS } from '@/const/logos';
 import { getLoginUrl } from '@/const';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
+import { trpc } from '@/lib/trpc';
 
 export default function Header() {
   const [location, navigate] = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { data: cartItems = [] } = trpc.cart.list.useQuery(undefined, { enabled: isAuthenticated });
+  const cartCount = cartItems.reduce((sum: number, item: any) => sum + item.quantity, 0);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -88,7 +91,11 @@ export default function Header() {
               aria-label="Panier"
             >
               <ShoppingCart className="w-5 h-5 text-foreground/80" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full animate-pulse" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center text-[10px] font-bold text-primary-foreground">
+                  {cartCount > 99 ? '99+' : cartCount}
+                </span>
+              )}
             </motion.button>
 
             {/* User Menu */}

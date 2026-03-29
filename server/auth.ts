@@ -4,7 +4,7 @@ import { OAuth2Client } from "google-auth-library";
 import { parse as parseCookie } from "cookie";
 import type { Request } from "express";
 import { ENV } from "./_core/env";
-import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { COOKIE_NAME, SESSION_TTL_MS } from "@shared/const";
 import { getUserById, getUserByEmail, upsertUser } from "./db";
 import type { User } from "../drizzle/schema";
 
@@ -21,7 +21,7 @@ function getSecret() {
 }
 
 export async function signSession(payload: SessionPayload, options?: { expiresInMs?: number }): Promise<string> {
-  const expiresInMs = options?.expiresInMs ?? ONE_YEAR_MS;
+  const expiresInMs = options?.expiresInMs ?? SESSION_TTL_MS;
   return new SignJWT(payload as unknown as Record<string, unknown>)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()

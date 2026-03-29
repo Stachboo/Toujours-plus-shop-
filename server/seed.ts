@@ -1,6 +1,19 @@
 import "dotenv/config";
 import { drizzle } from "drizzle-orm/mysql2";
-import { categories, products, productVariants } from "../drizzle/schema";
+import { categories, products, productVariants, cartItems, orders, orderItems } from "../drizzle/schema";
+
+function randomStock(): number {
+  return Math.floor(Math.random() * (40 - 15 + 1)) + 15;
+}
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
 
 async function seed() {
   if (!process.env.DATABASE_URL) {
@@ -9,133 +22,190 @@ async function seed() {
 
   const db = drizzle(process.env.DATABASE_URL);
 
-  console.log("🌱 Seed — Insertion des catégories...");
+  // ── 1. Clear existing data in FK order ─────────────────────────────
+  console.log("🗑️  Nettoyage des tables existantes...");
+  await db.delete(orderItems);
+  await db.delete(orders);
+  await db.delete(cartItems);
+  await db.delete(productVariants);
+  await db.delete(products);
+  await db.delete(categories);
+  console.log("  ✅ Tables vidées");
+
+  // ── 2. Insert categories ───────────────────────────────────────────
+  console.log("🌱 Insertion des catégories...");
 
   const categoryData = [
-    { name: "T-Shirts", slug: "t-shirts", description: "T-shirts premium en coton lourd, parfaits pour exprimer son côté Toujours +" },
-    { name: "Sweats", slug: "sweats", description: "Sweats et hoodies confortables pour les jours Toujours + Fauché" },
-    { name: "Accessoires", slug: "accessoires", description: "Casquettes, tote bags et plus pour compléter le look" },
+    { name: "T-shirts", slug: "t-shirts", description: "T-shirts premium en coton lourd 220g, coupe unisexe. Parfaits pour afficher ton slogan Toujours +." },
+    { name: "Sweats", slug: "sweats", description: "Sweats confortables en molleton bio. Le confort Toujours + pour les journées canapé comme les sorties stylées." },
   ];
 
   for (const cat of categoryData) {
-    await db.insert(categories).values(cat).onDuplicateKeyUpdate({ set: { description: cat.description } });
+    await db.insert(categories).values(cat);
   }
 
-  // Fetch inserted categories to get IDs
   const allCats = await db.select().from(categories);
   const catMap = new Map(allCats.map(c => [c.slug, c.id]));
 
-  console.log("🌱 Seed — Insertion des produits Phase 1...");
-
-  const slogans = [
-    { key: "con", slogan: "Toujours + Con", description: "L'assumer avec fierté. Le classique incontournable de la collection." },
-    { key: "en-retard", slogan: "Toujours + En retard", description: "Pour ceux qui n'ont aucune notion du temps. Et qui l'assument." },
-    { key: "fauche", slogan: "Toujours + Fauché", description: "Mais toujours avec du style. Le paradoxe de notre génération." },
-    { key: "bavard", slogan: "Toujours + Bavard", description: "Impossible de l'arrêter. Et pourquoi le ferait-on ?" },
-    { key: "soif", slogan: "Toujours + Soif", description: "Le roi de l'apéro. Toujours prêt pour un verre." },
-  ];
-
-  const tshirtSizes = ["XS", "S", "M", "L", "XL", "XXL"];
-  const tshirtColors = ["Noir", "Blanc", "Gris Clair", "Gris Foncé", "Orange"];
-  const sweatSizes = ["XS", "S", "M", "L", "XL", "XXL"];
-  const sweatColors = ["Noir", "Gris Clair", "Gris Foncé", "Orange"];
-
   const tshirtCatId = catMap.get("t-shirts")!;
   const sweatCatId = catMap.get("sweats")!;
-  const accessoiresCatId = catMap.get("accessoires")!;
 
-  for (const s of slogans) {
-    // T-shirt
-    const tshirtResult = await db.insert(products).values({
-      categoryId: tshirtCatId,
-      name: `T-Shirt ${s.slogan}`,
-      slogan: s.slogan,
-      description: s.description,
+  console.log("  ✅ 2 catégories insérées");
+
+  // ── 3. Product definitions ─────────────────────────────────────────
+  const tshirts = [
+    {
+      name: "T-Shirt En Retard",
+      slogan: "En retard",
+      description: "Le classique. Pour ceux qui transforment chaque rendez-vous en surprise.",
       price: 2999,
+      colors: ["Noir", "Blanc", "Bordeaux"],
+      image: "/products/tshirt-en-retard.png",
+    },
+    {
+      name: "T-Shirt Fatigué",
+      slogan: "Fatigué",
+      description: "Parce que dormir c'est bien mais vivre c'est mieux.",
+      price: 2999,
+      colors: ["Noir", "Gris Chiné"],
+      image: "/products/tshirt-fatigue.png",
+    },
+    {
+      name: "T-Shirt Raison",
+      slogan: "Raison",
+      description: "Tu le sais, ils le savent, tout le monde le sait.",
+      price: 3499,
+      colors: ["Blanc", "Navy"],
+      image: "/products/tshirt-raison.png",
+    },
+    {
+      name: "T-Shirt De Café",
+      slogan: "De café",
+      description: "La perfusion matinale version textile.",
+      price: 2999,
+      colors: ["Noir", "Marron"],
+      image: "/products/tshirt-de-cafe.png",
+    },
+    {
+      name: "T-Shirt Cool",
+      slogan: "Cool",
+      description: "L'humilité n'est pas ton fort, et c'est tant mieux.",
+      price: 3499,
+      colors: ["Noir", "Blanc", "Vert Sapin"],
+      image: "/products/tshirt-cool.png",
+    },
+    {
+      name: "T-Shirt Honnête",
+      slogan: "Honnête",
+      description: "La vérité sort de ta garde-robe.",
+      price: 3999,
+      colors: ["Blanc", "Noir"],
+      image: "/products/tshirt-honnete.png",
+    },
+  ];
+
+  const sweats = [
+    {
+      name: "Sweat Confort",
+      slogan: "Confort",
+      description: "Le sweat qui te donne une excuse pour ne rien faire.",
+      price: 5999,
+      colors: ["Noir", "Gris Chiné", "Cream"],
+      image: "/products/sweat-confort.png",
+    },
+    {
+      name: "Sweat Flemmard",
+      slogan: "Flemmard",
+      description: "Champion du monde catégorie canapé.",
+      price: 6499,
+      colors: ["Noir", "Beige"],
+      image: "/products/sweat-flemmard.png",
+    },
+    {
+      name: "Sweat Stylé",
+      slogan: "Stylé",
+      description: "Le sweat premium pour ceux qui assument leur supériorité vestimentaire.",
+      price: 7999,
+      colors: ["Noir", "Blanc", "Bordeaux"],
+      image: "/products/sweat-style.png",
+    },
+  ];
+
+  const sizes = ["S", "M", "L", "XL"];
+
+  // ── 4. Insert T-shirts ─────────────────────────────────────────────
+  console.log("🌱 Insertion des T-shirts...");
+
+  for (const t of tshirts) {
+    const result = await db.insert(products).values({
+      categoryId: tshirtCatId,
+      name: t.name,
+      slogan: t.slogan,
+      description: t.description,
+      price: t.price,
+      imageUrl: t.image,
       isActive: 1,
     });
-    const tshirtId = (tshirtResult as any)[0].insertId as number;
+    const productId = (result as any)[0].insertId as number;
 
-    const tshirtVariants = [];
-    for (const size of tshirtSizes) {
-      for (const color of tshirtColors) {
-        const colorCode = color.replace(/\s+/g, "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        tshirtVariants.push({
-          productId: tshirtId,
+    const variants = [];
+    for (const color of t.colors) {
+      const colorCode = slugify(color).toUpperCase();
+      for (const size of sizes) {
+        variants.push({
+          productId,
           size,
           color,
-          stock: 50,
-          sku: `TS-${s.key.toUpperCase()}-${colorCode}-${size}`,
+          stock: randomStock(),
+          sku: `TS-${slugify(t.slogan).toUpperCase()}-${colorCode}-${size}`,
         });
       }
     }
-    await db.insert(productVariants).values(tshirtVariants);
+    await db.insert(productVariants).values(variants);
 
-    // Sweat
-    const sweatResult = await db.insert(products).values({
-      categoryId: sweatCatId,
-      name: `Sweat ${s.slogan}`,
-      slogan: s.slogan,
-      description: s.description,
-      price: 4999,
-      isActive: 1,
-    });
-    const sweatId = (sweatResult as any)[0].insertId as number;
-
-    const sweatVariants = [];
-    for (const size of sweatSizes) {
-      for (const color of sweatColors) {
-        const colorCode = color.replace(/\s+/g, "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        sweatVariants.push({
-          productId: sweatId,
-          size,
-          color,
-          stock: 30,
-          sku: `SW-${s.key.toUpperCase()}-${colorCode}-${size}`,
-        });
-      }
-    }
-    await db.insert(productVariants).values(sweatVariants);
-
-    console.log(`  ✅ ${s.slogan} — T-shirt + Sweat`);
+    console.log(`  ✅ ${t.name} — ${t.colors.length} couleurs x ${sizes.length} tailles = ${variants.length} variants`);
   }
 
-  // Accessoires
-  console.log("🌱 Seed — Insertion des accessoires...");
+  // ── 5. Insert Sweats ───────────────────────────────────────────────
+  console.log("🌱 Insertion des Sweats...");
 
-  const casquetteResult = await db.insert(products).values({
-    categoryId: accessoiresCatId,
-    name: "Casquette Toujours +",
-    slogan: "Toujours +",
-    description: "Casquette brodée avec le logo Toujours +. Taille unique ajustable.",
-    price: 1999,
-    isActive: 1,
-  });
-  const casquetteId = (casquetteResult as any)[0].insertId as number;
+  for (const s of sweats) {
+    const result = await db.insert(products).values({
+      categoryId: sweatCatId,
+      name: s.name,
+      slogan: s.slogan,
+      description: s.description,
+      price: s.price,
+      imageUrl: s.image,
+      isActive: 1,
+    });
+    const productId = (result as any)[0].insertId as number;
 
-  await db.insert(productVariants).values([
-    { productId: casquetteId, size: "One Size", color: "Noir", stock: 100, sku: "ACC-CASQ-NOIR" },
-    { productId: casquetteId, size: "One Size", color: "Blanc", stock: 80, sku: "ACC-CASQ-BLANC" },
-    { productId: casquetteId, size: "One Size", color: "Orange", stock: 60, sku: "ACC-CASQ-ORANGE" },
-  ]);
+    const variants = [];
+    for (const color of s.colors) {
+      const colorCode = slugify(color).toUpperCase();
+      for (const size of sizes) {
+        variants.push({
+          productId,
+          size,
+          color,
+          stock: randomStock(),
+          sku: `SW-${slugify(s.slogan).toUpperCase()}-${colorCode}-${size}`,
+        });
+      }
+    }
+    await db.insert(productVariants).values(variants);
 
-  const toteBagResult = await db.insert(products).values({
-    categoryId: accessoiresCatId,
-    name: "Tote Bag Toujours +",
-    slogan: "Toujours +",
-    description: "Tote bag en coton bio avec le logo Toujours +. Parfait pour le quotidien.",
-    price: 1499,
-    isActive: 1,
-  });
-  const toteBagId = (toteBagResult as any)[0].insertId as number;
+    console.log(`  ✅ ${s.name} — ${s.colors.length} couleurs x ${sizes.length} tailles = ${variants.length} variants`);
+  }
 
-  await db.insert(productVariants).values([
-    { productId: toteBagId, size: "One Size", color: "Noir", stock: 120, sku: "ACC-TOTE-NOIR" },
-    { productId: toteBagId, size: "One Size", color: "Blanc", stock: 100, sku: "ACC-TOTE-BLANC" },
-  ]);
+  // ── Summary ────────────────────────────────────────────────────────
+  const totalProducts = tshirts.length + sweats.length;
+  const totalVariants =
+    tshirts.reduce((sum, t) => sum + t.colors.length * sizes.length, 0) +
+    sweats.reduce((sum, s) => sum + s.colors.length * sizes.length, 0);
 
-  console.log("  ✅ Casquette + Tote Bag");
-  console.log("\n✨ Seed terminé ! 12 produits, ~280 variants insérés.");
+  console.log(`\n✨ Seed terminé ! ${totalProducts} produits, ${totalVariants} variants insérés.`);
 
   process.exit(0);
 }

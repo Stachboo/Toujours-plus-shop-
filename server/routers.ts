@@ -1,4 +1,4 @@
-import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { COOKIE_NAME, SESSION_TTL_MS, FREE_SHIPPING_THRESHOLD, SHIPPING_COST } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { z } from "zod";
@@ -87,7 +87,7 @@ export const appRouter = router({
           const user = await registerUser(input);
           const token = await createSessionToken(user);
           const cookieOptions = getSessionCookieOptions(ctx.req);
-          ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+          ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: SESSION_TTL_MS });
           const { passwordHash, googleId, ...safeUser } = user;
           return { success: true, user: safeUser };
         } catch (error: any) {
@@ -105,7 +105,7 @@ export const appRouter = router({
           const user = await loginUser(input);
           const token = await createSessionToken(user);
           const cookieOptions = getSessionCookieOptions(ctx.req);
-          ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+          ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: SESSION_TTL_MS });
           const { passwordHash, googleId, ...safeUser } = user;
           return { success: true, user: safeUser };
         } catch (error: any) {
@@ -153,7 +153,7 @@ export const appRouter = router({
         }
 
         // Server-side shipping calculation
-        const shipping = subtotal >= 5000 ? 0 : 500;
+        const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
         const totalAmount = subtotal + shipping;
 
         // Fraud prevention
@@ -163,25 +163,31 @@ export const appRouter = router({
         }
 
         const stripe = getStripe();
-        const paymentIntent = await stripe.paymentIntents.create({
-          amount: totalAmount,
-          currency: "eur",
-          metadata: {
-            userId: String(ctx.user.id),
-            customerName: input.customerName,
-            customerEmail: input.customerEmail,
-            customerPhone: input.customerPhone || "",
-            shippingAddress: input.shippingAddress,
-            shippingCity: input.shippingCity,
-            shippingPostalCode: input.shippingPostalCode,
-            shippingCountry: input.shippingCountry,
-            billingAddress: input.billingAddress || "",
-            billingCity: input.billingCity || "",
-            billingPostalCode: input.billingPostalCode || "",
-            billingCountry: input.billingCountry || "",
-            notes: input.notes || "",
-          },
-        });
+        let paymentIntent;
+        try {
+          paymentIntent = await stripe.paymentIntents.create({
+            amount: totalAmount,
+            currency: "eur",
+            metadata: {
+              userId: String(ctx.user.id),
+              customerName: input.customerName,
+              customerEmail: input.customerEmail,
+              customerPhone: input.customerPhone || "",
+              shippingAddress: input.shippingAddress,
+              shippingCity: input.shippingCity,
+              shippingPostalCode: input.shippingPostalCode,
+              shippingCountry: input.shippingCountry,
+              billingAddress: input.billingAddress || "",
+              billingCity: input.billingCity || "",
+              billingPostalCode: input.billingPostalCode || "",
+              billingCountry: input.billingCountry || "",
+              notes: input.notes || "",
+            },
+          });
+        } catch (err) {
+          console.error("[Stripe] Failed to create PaymentIntent:", err);
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erreur lors de la création du paiement. Veuillez réessayer." });
+        }
 
         return {
           clientSecret: paymentIntent.client_secret!,

@@ -3,18 +3,19 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
+import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import Home from "./pages/Home";
-import Products from "./pages/Products";
-import ProductDetail from "./pages/ProductDetail";
-import Cart from "./pages/Cart";
-import OrderConfirmation from "./pages/OrderConfirmation";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-
+const Home = lazy(() => import("./pages/Home"));
+const Products = lazy(() => import("./pages/Products"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const Cart = lazy(() => import("./pages/Cart"));
+const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const Legal = lazy(() => import("./pages/Legal"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
@@ -30,11 +31,12 @@ function Router() {
             <Route path="/products" component={Products} />
             <Route path="/product/:id" component={ProductDetail} />
             <Route path="/cart" component={Cart} />
-            <Route path="/checkout" component={Checkout} />
+            <Route path="/checkout">{() => <ProtectedRoute><Checkout /></ProtectedRoute>}</Route>
             <Route path="/order-confirmation/:id" component={OrderConfirmation} />
-            <Route path="/admin" component={AdminDashboard} />
+            <Route path="/admin">{() => <ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>}</Route>
             <Route path="/login" component={Login} />
             <Route path="/register" component={Register} />
+            <Route path="/legal" component={Legal} />
             <Route path="/404" component={NotFound} />
             {/* Final fallback route */}
             <Route component={NotFound} />

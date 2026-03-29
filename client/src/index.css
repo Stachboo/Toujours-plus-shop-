@@ -500,6 +500,16 @@
     animation: float 6s ease-in-out infinite;
   }
 
+  /* Slow 3D Y-axis rotation */
+  @keyframes spinY {
+    0% { transform: rotateY(0deg); }
+    100% { transform: rotateY(360deg); }
+  }
+  .animate-spin-y {
+    animation: spinY 12s linear infinite;
+    transform-style: preserve-3d;
+  }
+
   /* Gradient Shift */
   @keyframes gradientShift {
     0% { background-position: 0% 50%; }

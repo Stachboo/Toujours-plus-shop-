@@ -15,6 +15,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatPrice } from '@shared/const';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -97,7 +98,7 @@ export default function AdminDashboard() {
     { label: 'En traitement', count: orders.filter((o) => o.status === 'processing').length, icon: Package, color: 'text-blue-400' },
     { label: 'Expédiées', count: orders.filter((o) => o.status === 'shipped').length, icon: Truck, color: 'text-primary' },
     { label: 'Livrées', count: orders.filter((o) => o.status === 'delivered').length, icon: CheckCircle, color: 'text-green-400' },
-    { label: 'CA Total', count: `${(totalRevenue / 100).toFixed(0)}€`, icon: TrendingUp, color: 'text-accent' },
+    { label: 'CA Total', count: `${formatPrice(totalRevenue)}`, icon: TrendingUp, color: 'text-accent' },
   ];
 
   return (
@@ -190,7 +191,7 @@ export default function AdminDashboard() {
                           {order.customerEmail}
                         </td>
                         <td className="px-4 md:px-6 py-4 text-sm font-semibold text-foreground">
-                          {(order.totalAmount / 100).toFixed(2)}€
+                          {formatPrice(order.totalAmount)}
                         </td>
                         <td className="px-4 md:px-6 py-4">
                           <span
@@ -284,7 +285,7 @@ export default function AdminDashboard() {
               <div className="border-t border-border/20 pt-6 mt-6 flex justify-between items-center">
                 <span className="font-bold text-foreground">Total</span>
                 <span className="text-2xl font-bold text-primary">
-                  {(selectedOrder.totalAmount / 100).toFixed(2)}€
+                  {formatPrice(selectedOrder.totalAmount)}
                 </span>
               </div>
             </motion.div>

@@ -5,6 +5,7 @@ import { trpc } from '@/lib/trpc';
 import { motion } from 'framer-motion';
 import { ShoppingBag, ChevronLeft, Plus, Minus, Truck, Shield, RotateCcw, Star } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatPrice } from '@shared/const';
 
 export default function ProductDetail() {
   const [, params] = useRoute('/product/:id');
@@ -21,10 +22,13 @@ export default function ProductDetail() {
     { enabled: productId > 0 }
   );
 
+  const utils = trpc.useUtils();
+
   const addToCartMutation = trpc.cart.add.useMutation({
     onSuccess: () => {
       toast.success('Produit ajouté au panier !');
       setQuantity(1);
+      utils.cart.list.invalidate();
     },
     onError: (error) => {
       toast.error(error.message || "Erreur lors de l'ajout au panier");
@@ -139,7 +143,7 @@ export default function ProductDetail() {
                   </p>
                   <h1 className="slogan text-3xl md:text-4xl mb-4">{product.slogan}</h1>
                   <p className="text-3xl font-bold text-primary">
-                    {(product.price / 100).toFixed(2)}€
+                    {formatPrice(product.price)}
                   </p>
                 </div>
 
@@ -251,7 +255,9 @@ export default function ProductDetail() {
                   className="w-full btn-primary text-base py-4 gap-2"
                 >
                   <ShoppingBag className="w-5 h-5" />
-                  {availableStock === 0
+                  {!selectedSize || !selectedColor
+                    ? 'Sélectionnez taille et couleur'
+                    : availableStock === 0
                     ? 'Rupture de stock'
                     : isAdding
                     ? 'Ajout en cours...'
